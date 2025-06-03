@@ -1,12 +1,15 @@
 package net.gamemode3.moveon.mixin;
 
 import net.gamemode3.moveon.block.ModBlocks;
+import net.minecraft.block.AbstractRailBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.PoweredRailBlock;
+import net.minecraft.block.enums.RailShape;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.entity.vehicle.ExperimentalMinecartController;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.state.property.Property;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,11 +51,16 @@ public class ExperimentalMinecartControllerMixin {
 
             if (velocity.length() > 0.01) {
 
-                double acceleration = 0.09; // Lightly powered rail acceleration
+                double acceleration = 0.03; // Lightly powered rail acceleration
                 double maxSpeed = 0.6; // Lightly powered rail max speed
+
                 if (railState.isOf(Blocks.POWERED_RAIL)) {
-                    acceleration = 0.15; // Booster rail acceleration
+//                    acceleration *= 5/3.0; // Booster rail acceleration
                     maxSpeed = 1.0; // Booster rail max speed
+                }
+
+                if (minecart.hasPassengers()) {
+                    acceleration *= 0.7;
                 }
 
                 if (velocityLength < maxSpeed) {
@@ -71,7 +79,32 @@ public class ExperimentalMinecartControllerMixin {
                 Vec3d vec3d = minecart.getLaunchDirection(railPos);
                 cir.setReturnValue(vec3d.lengthSquared() <= 0.0 ? velocity : vec3d.multiply(velocity.length() + 0.2));
             }
-        } else {
+        } else if (railState.isOf(Blocks.RAIL)) {
+            double maxSpeed = 0.3;
+            double velocityLength = velocity.length();
+
+            AbstractRailBlock railBlock = (AbstractRailBlock) railState.getBlock();
+            Property<RailShape> railShape = railBlock.getShapeProperty();
+            RailShape shape = railState.get(railShape);
+
+            final boolean BREAK_IN_CURVE = false;
+
+            boolean curved = switch (shape) {
+                case NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST -> true;
+                default -> false;
+            };
+
+            if (velocityLength > maxSpeed) {
+                if (curved && BREAK_IN_CURVE) velocityLength = maxSpeed;
+                else {
+                    double deceleration = 0.01;
+                    velocityLength -= deceleration;
+                    if (velocityLength < maxSpeed) velocityLength = maxSpeed;
+                }
+            }
+
+            velocity = velocity.normalize().multiply(velocityLength);
+
             cir.setReturnValue(velocity);
         }
     }
