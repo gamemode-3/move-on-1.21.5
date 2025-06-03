@@ -2,10 +2,7 @@ package net.gamemode3.moveon.mixin;
 
 import com.mojang.datafixers.util.Pair;
 import net.gamemode3.moveon.block.ModBlocks;
-import net.minecraft.block.AbstractRailBlock;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.PoweredRailBlock;
+import net.minecraft.block.*;
 import net.minecraft.block.enums.RailShape;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.MovementType;
@@ -14,11 +11,13 @@ import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.entity.vehicle.DefaultMinecartController;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.state.property.Property;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -27,6 +26,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(DefaultMinecartController.class)
 public abstract class DefaultMinecartControllerMixin {
 
+
+    @Shadow private Vec3d velocity;
 
     @Inject(method = "moveOnRail", at = @At("HEAD"), cancellable = true)
     public void moveOnRail(ServerWorld world, CallbackInfo ci) {
@@ -41,63 +42,88 @@ public abstract class DefaultMinecartControllerMixin {
         }
 
         minecart.onLanding();
-        double d = minecart.getX();
-        double e = minecart.getY();
-        double f = minecart.getZ();
-        Vec3d vec3d = self.snapPositionToRail(d, e, f);
-        e = blockPos.getY();
-        boolean stronglyPowered = false;
+        double x = minecart.getX();
+        double y = minecart.getY();
+        double z = minecart.getZ();
+        Vec3d vec3d = self.snapPositionToRail(x, y, z);
+        y = blockPos.getY();
         boolean powered = false;
         boolean notPowered = false;
         if (blockState.getBlock() instanceof PoweredRailBlock) {
             powered = (Boolean) blockState.get(PoweredRailBlock.POWERED);
             notPowered = !powered;
         }
-        if (blockState.isOf(Blocks.POWERED_RAIL)) {
-            stronglyPowered = true;
-        }
 
-        double g = 0.0078125;
+        double gravity = 0.0078125;
         if (minecart.isTouchingWater()) {
-            g *= 0.2;
+            gravity *= 0.2;
         }
 
-        Vec3d vec3d2 = self.getVelocity();
+        Vec3d velocity = self.getVelocity();
         RailShape railShape = blockState.get(((AbstractRailBlock) blockState.getBlock()).getShapeProperty());
         switch (railShape) {
             case ASCENDING_EAST:
-                self.setVelocity(vec3d2.add(-g, 0.0, 0.0));
-                e++;
+                self.setVelocity(velocity.add(-gravity, 0.0, 0.0));
+                y++;
                 break;
             case ASCENDING_WEST:
-                self.setVelocity(vec3d2.add(g, 0.0, 0.0));
-                e++;
+                self.setVelocity(velocity.add(gravity, 0.0, 0.0));
+                y++;
                 break;
             case ASCENDING_NORTH:
-                self.setVelocity(vec3d2.add(0.0, 0.0, g));
-                e++;
+                self.setVelocity(velocity.add(0.0, 0.0, gravity));
+                y++;
                 break;
             case ASCENDING_SOUTH:
-                self.setVelocity(vec3d2.add(0.0, 0.0, -g));
-                e++;
+                self.setVelocity(velocity.add(0.0, 0.0, -gravity));
+                y++;
         }
 
-        vec3d2 = self.getVelocity();
+        velocity = self.getVelocity();
         Pair<Vec3i, Vec3i> pair = AbstractMinecartEntity.getAdjacentRailPositionsByShape(railShape);
         Vec3i vec3i = pair.getFirst();
         Vec3i vec3i2 = pair.getSecond();
-        double h = vec3i2.getX() - vec3i.getX();
-        double i = vec3i2.getZ() - vec3i.getZ();
-        double j = Math.sqrt(h * h + i * i);
-        double k = vec3d2.x * h + vec3d2.z * i;
-        if (k < 0.0) {
-            h = -h;
-            i = -i;
+        double xDiff = vec3i2.getX() - vec3i.getX();
+        double zDiff = vec3i2.getZ() - vec3i.getZ();
+        double diffLength = Math.sqrt(xDiff * xDiff + zDiff * zDiff);
+        double direction = velocity.x * xDiff + velocity.z * zDiff;
+        if (direction < 0.0) {
+            xDiff = -xDiff;
+            zDiff = -zDiff;
         }
 
-        double l = Math.min(2.0, vec3d2.horizontalLength());
-        vec3d2 = new Vec3d(l * h / j, vec3d2.y, l * i / j);
-        self.setVelocity(vec3d2);
+        boolean curved = false;
+
+        if (blockState.getBlock() instanceof RailBlock) {
+            Property<RailShape> shapeProperty = ((RailBlock) blockState.getBlock()).getShapeProperty();
+            if (shapeProperty != null && blockState.contains(shapeProperty)) {
+                RailShape shape = blockState.get(shapeProperty);
+                switch (shape) {
+                    case NORTH_EAST:
+                    case NORTH_WEST:
+                    case SOUTH_EAST:
+                    case SOUTH_WEST: {curved = true;}
+                }
+            }
+        }
+
+        if (curved) {
+            double maxSpeed = 1.0;
+            velocity = self.getVelocity();
+            double horizontalSpeed = velocity.horizontalLength();
+            if (horizontalSpeed > maxSpeed) {
+                horizontalSpeed = maxSpeed;
+            }
+            double xSpeed = horizontalSpeed * xDiff / diffLength;
+            double zSpeed = horizontalSpeed * zDiff / diffLength;
+            self.setVelocity(velocity.add(xSpeed, 0.0, zSpeed));
+        }
+        
+
+        double horizontalSpeed
+                = Math.min(2.0, velocity.horizontalLength());
+        velocity = new Vec3d(horizontalSpeed * xDiff / diffLength, velocity.y, horizontalSpeed * zDiff / diffLength);
+        self.setVelocity(velocity);
 
 
         Entity entity = minecart.getFirstPassenger();
@@ -130,26 +156,26 @@ public abstract class DefaultMinecartControllerMixin {
         double o = blockPos.getZ() + 0.5 + vec3i.getZ() * 0.5;
         double p = blockPos.getX() + 0.5 + vec3i2.getX() * 0.5;
         double q = blockPos.getZ() + 0.5 + vec3i2.getZ() * 0.5;
-        h = p - n;
-        i = q - o;
+        xDiff = p - n;
+        zDiff = q - o;
         double r;
-        if (h == 0.0) {
-            r = f - blockPos.getZ();
-        } else if (i == 0.0) {
-            r = d - blockPos.getX();
+        if (xDiff == 0.0) {
+            r = z - blockPos.getZ();
+        } else if (zDiff == 0.0) {
+            r = x - blockPos.getX();
         } else {
-            double s = d - n;
-            double t = f - o;
-            r = (s * h + t * i) * 2.0;
+            double s = x - n;
+            double t = z - o;
+            r = (s * xDiff + t * zDiff) * 2.0;
         }
 
-        d = n + h * r;
-        f = o + i * r;
-        self.setPos(d, e, f);
+        x = n + xDiff * r;
+        z = o + zDiff * r;
+        self.setPos(x, y, z);
         double s = minecart.hasPassengers() ? 0.75 : 1.0;
         double maxSpeed = ((AbstractMinecartEntityInvoker) minecart).invokeGetMaxSpeed(world);
-        vec3d2 = self.getVelocity();
-        minecart.move(MovementType.SELF, new Vec3d(MathHelper.clamp(s * vec3d2.x, -maxSpeed, maxSpeed), 0.0, MathHelper.clamp(s * vec3d2.z, -maxSpeed, maxSpeed)));
+        velocity = self.getVelocity();
+        minecart.move(MovementType.SELF, new Vec3d(MathHelper.clamp(s * velocity.x, -maxSpeed, maxSpeed), 0.0, MathHelper.clamp(s * velocity.z, -maxSpeed, maxSpeed)));
         if (vec3i.getY() != 0
                 && MathHelper.floor(minecart.getX()) - blockPos.getX() == vec3i.getX()
                 && MathHelper.floor(minecart.getZ()) - blockPos.getZ() == vec3i.getZ()) {
@@ -173,12 +199,12 @@ public abstract class DefaultMinecartControllerMixin {
             self.setPos(minecart.getX(), vec3d5.y, minecart.getZ());
         }
 
-        int w = MathHelper.floor(minecart.getX());
-        int x = MathHelper.floor(minecart.getZ());
-        if (w != blockPos.getX() || x != blockPos.getZ()) {
+        x = MathHelper.floor(minecart.getX());
+        z = MathHelper.floor(minecart.getZ());
+        if (x != blockPos.getX() || z != blockPos.getZ()) {
             Vec3d vec3d6 = self.getVelocity();
             double v = vec3d6.horizontalLength();
-            self.setVelocity(v * (w - blockPos.getX()), vec3d6.y, v * (x - blockPos.getZ()));
+            self.setVelocity(v * (x - blockPos.getX()), vec3d6.y, v * (z - blockPos.getZ()));
         }
 
 
@@ -209,13 +235,6 @@ public abstract class DefaultMinecartControllerMixin {
                         vec3d6.z / v * AccelerationModifier
                 );
 
-                if (newVelocity.horizontalLength() > maxSpeed) {
-                    newVelocity = newVelocity.multiply(0.8, 1.0, 0.8);
-                    if (newVelocity.horizontalLength() < maxSpeed) {
-                        newVelocity = newVelocity.normalize().multiply(maxSpeed);
-                    }
-                }
-
                 self.setVelocity(newVelocity);
             } else {
                 AccelerationModifier *= startModifier;
@@ -244,6 +263,18 @@ public abstract class DefaultMinecartControllerMixin {
                 self.setVelocity(x1, vec3d7.y, z1);
             }
         }
+
+        velocity = self.getVelocity();
+
+        if (velocity.horizontalLength() > maxSpeed) {
+            velocity = velocity.multiply(0.8, 1.0, 0.8);
+            if (velocity.horizontalLength() < maxSpeed) {
+                velocity = velocity.normalize().multiply(maxSpeed);
+            }
+        }
+
+        self.setVelocity(velocity);
+
         ci.cancel();
     }
 
