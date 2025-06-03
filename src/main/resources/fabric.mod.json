@@ -3,9 +3,9 @@
 	"id": "move-on",
 	"version": "${version}",
 	"name": "move on!",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Adds Copper Powered Rails and makes Powered rails faster!",
 	"authors": [
-		"Me!"
+		"gamemode-3"
 	],
 	"contact": {
 		"homepage": "https://github.com/gamemode-3/move-on-1.21.5",
