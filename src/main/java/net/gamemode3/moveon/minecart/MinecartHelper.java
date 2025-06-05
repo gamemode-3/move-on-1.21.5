@@ -81,7 +81,7 @@ public class MinecartHelper {
     }
 
     public static double getSpeedRetentionOnRail() {
-        return 0.997;
+        return 0.99;
     }
 
     public static double getLightlyPoweredRailAcceleration() {
