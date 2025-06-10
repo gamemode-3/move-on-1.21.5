@@ -1,6 +1,7 @@
 package net.gamemode3.moveon.mixin;
 
 import net.gamemode3.moveon.block.ModBlocks;
+import net.gamemode3.moveon.config.ModConfig;
 import net.gamemode3.moveon.minecart.MinecartHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -32,7 +33,7 @@ public class ExperimentalMinecartControllerMixin {
             double maxSpeed = MinecartHelper.getPoweredRailMaxSpeed(railState, minecart);
 
             if (velocityLength > maxSpeed) {
-                double deceleration = MinecartHelper.getActivePoweredRailDeceleration();
+                double deceleration = ModConfig.getActivePoweredRailDeceleration();
                 velocityLength -= deceleration;
                 if (velocityLength < maxSpeed) velocityLength = maxSpeed;
             }
@@ -40,10 +41,10 @@ public class ExperimentalMinecartControllerMixin {
             cir.setReturnValue(velocity.normalize().multiply(velocityLength));
             return;
         } else if (onPoweredRail) {
-            cir.setReturnValue(velocity.length() < 0.03 ? Vec3d.ZERO : velocity.multiply(MinecartHelper.getSpeedRetentionOnInactivePoweredRail()));
+            cir.setReturnValue(velocity.length() < 0.03 ? Vec3d.ZERO : velocity.multiply(ModConfig.getInactivePoweredRailSpeedRetention()));
             return;
         } else if (MinecartHelper.onRail(railState)) {
-            double speedRetention = MinecartHelper.getSpeedRetentionOnRail();
+            double speedRetention = ModConfig.getSpeedRetention();
 
             velocity = new Vec3d(
                     velocity.x * speedRetention,
@@ -70,7 +71,7 @@ public class ExperimentalMinecartControllerMixin {
         double nonDerailmentSpeed = MinecartHelper.getMinDerailmentSpeed(minecart) - 0.1;
 
         if (velocityLength > nonDerailmentSpeed) {
-            double deceleration = MinecartHelper.getActivatorRailDeceleration();
+            double deceleration = ModConfig.getActivatorRailDeceleration();
             velocityLength -= deceleration;
             if (velocityLength < nonDerailmentSpeed) velocityLength = nonDerailmentSpeed;
         }
@@ -80,7 +81,7 @@ public class ExperimentalMinecartControllerMixin {
 
     @Inject(method="moveAlongTrack", at = @At("HEAD"), cancellable = true)
     private void derailMinecartInCurve(BlockPos blockPos, RailShape railShape, double remainingMovement, CallbackInfoReturnable<Double> cir) {
-        if (!MinecartHelper.canDerail()) {
+        if (!ModConfig.getCanDerail()) {
             return;
         }
 
@@ -121,7 +122,7 @@ public class ExperimentalMinecartControllerMixin {
 
         derailmentDirection = derailmentDirection.add(movementDirection).normalize();
 
-        velocityLength *= MinecartHelper.getDerailmentSlowdownFactor();
+        velocityLength *= ModConfig.getDerailmentSlowdownFactor();
 
         minecart.setVelocity(derailmentDirection.multiply(velocityLength));
         minecart.move(MovementType.SELF, minecart.getVelocity());
@@ -172,7 +173,6 @@ public class ExperimentalMinecartControllerMixin {
                 double maxSpeed = MinecartHelper.getPoweredRailMaxSpeed(railState, minecart);
 
                 if (minecart.hasPassengers()) {
-                    acceleration *= MinecartHelper.getPassengerAccelerationFactor();
                 }
 
                 if (velocityLength < maxSpeed) {
