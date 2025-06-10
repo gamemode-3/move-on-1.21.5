@@ -18,7 +18,7 @@ public class ModConfigProvider implements SimpleConfig.DefaultConfig {
     public void addKeyValuePair(Pair<String, ?> keyValuePair, String comment) {
         configsList.add(keyValuePair);
         String modifiedComment = comment.replaceAll("\n", "\n# ");
-        configContents +=  "# " + modifiedComment + "\n# default: " + keyValuePair.getSecond() + "\n" + keyValuePair.getFirst() + "=" + keyValuePair.getSecond() + "\n";
+        configContents +=  "\n# " + modifiedComment + "\n# default: " + keyValuePair.getSecond() + "\n" + keyValuePair.getFirst() + "=" + keyValuePair.getSecond() + "\n";
     }
 
     @Override

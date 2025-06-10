@@ -11,14 +11,14 @@ public class ModConfig {
     private static double PASSENGER_ACCELERATION_FACTOR;
 
     private static double SPEED_RETENTION;
-    private static double INACTIV_POWERED_RAIL_SPEED_RETENTION;
+    private static double INACTIVE_POWERED_RAIL_SPEED_RETENTION;
 
     private static double LIGHTLY_POWERED_RAIL_ACCELERATION;
     private static double BOOSTER_RAIL_ACCELERATION;
     private static double LIGHTLY_POWERED_RAIL_MAX_SPEED;
     private static double BOOSTER_RAIL_MAX_SPEED;
 
-    private static double ACTIVE_POWERED_RAIL_DECELERATION;
+    private static double ACTIVE_POWERED_RAIL_SPEED_RETENTION;
     private static double ACTIVATOR_RAIL_DECELERATION;
 
     private static boolean CAN_DERAIL;
@@ -54,6 +54,10 @@ public class ModConfig {
                 new Pair<>("move-on.minecarts.inactive-powered-rail-speed-retention", 0.5),
                 "on inactive powered rails"
         );
+        configs.addKeyValuePair(
+                new Pair<>("move-on.minecarts.active-powered-rail-speed-retention", 0.982),
+                "when minecart is going faster than the rail's max speed"
+        );
 
         configs.addKeyValuePair(
                 new Pair<>("move-on.minecarts.lightly-powered-rail-acceleration", 0.03),
@@ -73,10 +77,6 @@ public class ModConfig {
         );
 
         configs.addKeyValuePair(
-                new Pair<>("move-on.minecarts.active-powered-rail-deceleration", 0.0151),
-                "when minecart is going faster than the rail's max speed"
-        );
-        configs.addKeyValuePair(
                 new Pair<>("move-on.minecarts.activator-rail-deceleration", 0.25),
                 "additional deceleration to slow minecart below derailment speed"
         );
@@ -91,8 +91,7 @@ public class ModConfig {
                         interpolates between copper rail and gold rail speed
                         0 => if minecart is going any faster than copper rail max speed, it will derail
                         1 => gold rail speed is the limit, it will basically never derail
-                        -0.5 => if the minecart is going faster than half the copper rail's max speed, it will derail
-                        """
+                        -0.5 => if the minecart is going faster than half the copper rail's max speed, it will derail"""
         );
         configs.addKeyValuePair(
                 new Pair<>("move-on.minecarts.derailment-slowdown-factor", 0.5),
@@ -109,14 +108,14 @@ public class ModConfig {
         PASSENGER_ACCELERATION_FACTOR = CONFIG.getOrDefault("move-on.minecarts.passenger-acceleration-factor", 0.7);
 
         SPEED_RETENTION = CONFIG.getOrDefault("move-on.minecarts.speed-retention", 0.99);
-        INACTIV_POWERED_RAIL_SPEED_RETENTION = CONFIG.getOrDefault("move-on.minecarts.inactive-powered-rail-speed-retention", 0.5);
+        INACTIVE_POWERED_RAIL_SPEED_RETENTION = CONFIG.getOrDefault("move-on.minecarts.inactive-powered-rail-speed-retention", 0.5);
+        ACTIVE_POWERED_RAIL_SPEED_RETENTION = CONFIG.getOrDefault("move-on.minecarts.active-powered-rail-speed-retention", 0.982);
 
         LIGHTLY_POWERED_RAIL_ACCELERATION = CONFIG.getOrDefault("move-on.minecarts.lightly-powered-rail-acceleration", 0.03);
         BOOSTER_RAIL_ACCELERATION = CONFIG.getOrDefault("move-on.minecarts.booster-rail-acceleration", 0.06);
         LIGHTLY_POWERED_RAIL_MAX_SPEED = CONFIG.getOrDefault("move-on.minecarts.lightly-powered-rail-max-speed", 0.6);
         BOOSTER_RAIL_MAX_SPEED = CONFIG.getOrDefault("move-on.minecarts.booster-rail-max-speed", 1.4);
 
-        ACTIVE_POWERED_RAIL_DECELERATION = CONFIG.getOrDefault("move-on.minecarts.active-powered-rail-deceleration", 0.0151);
         ACTIVATOR_RAIL_DECELERATION = CONFIG.getOrDefault("move-on.minecarts.activator-rail-deceleration", 0.25);
 
         CAN_DERAIL = CONFIG.getOrDefault("move-on.minecarts.can-derail", true);
@@ -138,7 +137,10 @@ public class ModConfig {
         return SPEED_RETENTION;
     }
     public static double getInactivePoweredRailSpeedRetention() {
-        return INACTIV_POWERED_RAIL_SPEED_RETENTION;
+        return INACTIVE_POWERED_RAIL_SPEED_RETENTION;
+    }
+    public static double getActivePoweredRailSpeedRetention() {
+        return ACTIVE_POWERED_RAIL_SPEED_RETENTION;
     }
 
     public static double getLightlyPoweredRailAcceleration() {
@@ -154,9 +156,6 @@ public class ModConfig {
         return BOOSTER_RAIL_MAX_SPEED;
     }
 
-    public static double getActivePoweredRailDeceleration() {
-        return ACTIVE_POWERED_RAIL_DECELERATION;
-    }
     public static double getActivatorRailDeceleration() {
         return ACTIVATOR_RAIL_DECELERATION;
     }

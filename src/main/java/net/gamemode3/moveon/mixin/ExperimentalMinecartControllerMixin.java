@@ -33,8 +33,8 @@ public class ExperimentalMinecartControllerMixin {
             double maxSpeed = MinecartHelper.getPoweredRailMaxSpeed(railState, minecart);
 
             if (velocityLength > maxSpeed) {
-                double deceleration = ModConfig.getActivePoweredRailDeceleration();
-                velocityLength -= deceleration;
+                double speedRetention = ModConfig.getActivePoweredRailSpeedRetention();
+                velocityLength *= speedRetention;
                 if (velocityLength < maxSpeed) velocityLength = maxSpeed;
             }
 
