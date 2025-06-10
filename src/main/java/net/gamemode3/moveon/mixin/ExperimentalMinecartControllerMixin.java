@@ -173,6 +173,7 @@ public class ExperimentalMinecartControllerMixin {
                 double maxSpeed = MinecartHelper.getPoweredRailMaxSpeed(railState, minecart);
 
                 if (minecart.hasPassengers()) {
+                    acceleration *= ModConfig.getPassengerAccelerationFactor();
                 }
 
                 if (velocityLength < maxSpeed) {

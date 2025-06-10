@@ -56,11 +56,11 @@ public class ModConfig {
         );
 
         configs.addKeyValuePair(
-                new Pair<>("move-on.minecarts.lightly-powered-rail-acceleration", 0.02),
+                new Pair<>("move-on.minecarts.lightly-powered-rail-acceleration", 0.03),
                 "on active copper rails"
         );
         configs.addKeyValuePair(
-                new Pair<>("move-on.minecarts.booster-rail-acceleration", 0.03),
+                new Pair<>("move-on.minecarts.booster-rail-acceleration", 0.05),
                 "on active gold rails"
         );
         configs.addKeyValuePair(
@@ -87,10 +87,12 @@ public class ModConfig {
         );
         configs.addKeyValuePair(
                 new Pair<>("move-on.minecarts.min-derailment-speed-interpolation-factor", 0.1),
-                "interpolates between copper rail and gold rail speed\n"
-                + "0 => if minecart is going any faster than copper rail max speed, it will derail\n"
-                + "1 => gold rail speed is the limit, it will basically never derail\n"
-                + "-0.5 => if the minecart is going faster than half the copper rail's max speed, it will derail\n"
+                """
+                        interpolates between copper rail and gold rail speed
+                        0 => if minecart is going any faster than copper rail max speed, it will derail
+                        1 => gold rail speed is the limit, it will basically never derail
+                        -0.5 => if the minecart is going faster than half the copper rail's max speed, it will derail
+                        """
         );
         configs.addKeyValuePair(
                 new Pair<>("move-on.minecarts.derailment-slowdown-factor", 0.5),
@@ -109,8 +111,8 @@ public class ModConfig {
         SPEED_RETENTION = CONFIG.getOrDefault("move-on.minecarts.speed-retention", 0.99);
         INACTIV_POWERED_RAIL_SPEED_RETENTION = CONFIG.getOrDefault("move-on.minecarts.inactive-powered-rail-speed-retention", 0.5);
 
-        LIGHTLY_POWERED_RAIL_ACCELERATION = CONFIG.getOrDefault("move-on.minecarts.lightly-powered-rail-acceleration", 0.02);
-        BOOSTER_RAIL_ACCELERATION = CONFIG.getOrDefault("move-on.minecarts.booster-rail-acceleration", 0.03);
+        LIGHTLY_POWERED_RAIL_ACCELERATION = CONFIG.getOrDefault("move-on.minecarts.lightly-powered-rail-acceleration", 0.03);
+        BOOSTER_RAIL_ACCELERATION = CONFIG.getOrDefault("move-on.minecarts.booster-rail-acceleration", 0.06);
         LIGHTLY_POWERED_RAIL_MAX_SPEED = CONFIG.getOrDefault("move-on.minecarts.lightly-powered-rail-max-speed", 0.6);
         BOOSTER_RAIL_MAX_SPEED = CONFIG.getOrDefault("move-on.minecarts.booster-rail-max-speed", 1.4);
 
